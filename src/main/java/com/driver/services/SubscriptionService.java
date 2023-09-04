@@ -26,21 +26,25 @@ public class SubscriptionService {
 
         //Save The subscription Object into the Db and return the total Amount that user has to pay
 
-        SubscriptionType subscriptionType = subscriptionEntryDto.getSubscriptionType();
-        int noOfScreensRequired = subscriptionEntryDto.getNoOfScreensRequired();
+        try {
+            SubscriptionType subscriptionType = subscriptionEntryDto.getSubscriptionType();
+            int noOfScreensRequired = subscriptionEntryDto.getNoOfScreensRequired();
+            User user = userRepository.findById(subscriptionEntryDto.getUserId()).orElse(null);
 
-        int totalAmount = calculateSubscriptionAmount(subscriptionType, noOfScreensRequired);
+            if (user == null) {
+                throw new IllegalArgumentException("User not found");
+            }
 
-        Subscription subscription = new Subscription(
-                subscriptionType,
-                noOfScreensRequired,
-                new Date(),  // Set the subscription start date to the current date
-                totalAmount
-        );
+            int totalAmount = calculateSubscriptionAmount(subscriptionType, noOfScreensRequired);
+            Subscription subscription = new Subscription(subscriptionType, noOfScreensRequired, new Date(), totalAmount);
+            subscription.setUser(user);
+            subscriptionRepository.save(subscription);
 
-        Subscription savedSubscription = subscriptionRepository.save(subscription);
-
-        return savedSubscription.getTotalAmountPaid();
+            return totalAmount;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return -1; // Handle the exception appropriately
+        }
     }
 
     public Integer upgradeSubscription(Integer userId)throws Exception{
@@ -49,26 +53,42 @@ public class SubscriptionService {
         //In all other cases just try to upgrade the subscription and tell the difference of price that user has to pay
         //update the subscription in the repository
 
-        User user = userRepository.findById(userId).orElse(null);
+        try {
+            User user = userRepository.findById(userId).orElse(null);
 
-        if (user == null) {
-            throw new Exception("User not found");
+            if (user == null) {
+                throw new IllegalArgumentException("User not found");
+            }
+
+            Subscription currentSubscription = user.getSubscription();
+            if (currentSubscription == null) {
+                throw new IllegalStateException("User does not have an existing subscription");
+            }
+
+            SubscriptionType currentSubscriptionType = currentSubscription.getSubscriptionType();
+
+            if (currentSubscriptionType == SubscriptionType.ELITE) {
+                throw new IllegalStateException("Already the best subscription");
+            }
+
+            SubscriptionType nextSubscriptionType = getNextSubscriptionType(currentSubscriptionType);
+
+            int differenceInFare = calculateSubscriptionAmount(nextSubscriptionType, currentSubscription.getNoOfScreensSubscribed())
+                    - currentSubscription.getTotalAmountPaid();
+
+            if (differenceInFare <= 0) {
+                throw new IllegalStateException("Invalid subscription upgrade");
+            }
+
+            Subscription newSubscription = new Subscription(nextSubscriptionType, currentSubscription.getNoOfScreensSubscribed(), new Date(), differenceInFare);
+            newSubscription.setUser(user);
+            subscriptionRepository.save(newSubscription);
+
+            return differenceInFare;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return -1; // Handle the exception appropriately
         }
-
-        SubscriptionType currentSubscriptionType = user.getSubscription().getSubscriptionType();
-
-        if (currentSubscriptionType == SubscriptionType.ELITE) {
-            throw new Exception("Already the best Subscription");
-        }
-
-        int fareDifference = calculateFareDifference(currentSubscriptionType);
-
-        SubscriptionType newSubscriptionType = getNextSubscriptionType(currentSubscriptionType);
-        user.getSubscription().setSubscriptionType(newSubscriptionType);
-
-        userRepository.save(user);
-
-        return fareDifference;
     }
 
     public Integer calculateTotalRevenueOfHotstar(){
@@ -76,11 +96,19 @@ public class SubscriptionService {
         //We need to find out total Revenue of hotstar : from all the subscriptions combined
         //Hint is to use findAll function from the SubscriptionDb
 
-        int totalRevenue = subscriptionRepository.findAll().stream()
-                .mapToInt(Subscription::getTotalAmountPaid)
-                .sum();
+        try {
+            List<Subscription> subscriptions = subscriptionRepository.findAll();
+            int totalRevenue = 0;
 
-        return totalRevenue;
+            for (Subscription subscription : subscriptions) {
+                totalRevenue += subscription.getTotalAmountPaid();
+            }
+
+            return totalRevenue;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return -1; // Handle the exception appropriately
+        }
     }
 
     private int calculateSubscriptionAmount(SubscriptionType subscriptionType, int noOfScreensRequired) {
@@ -123,14 +151,14 @@ public class SubscriptionService {
         return nextFare - currentFare;
     }
 
-    private SubscriptionType getNextSubscriptionType(SubscriptionType currentSubscriptionType) {
-        switch (currentSubscriptionType) {
+    private SubscriptionType getNextSubscriptionType(SubscriptionType currentType) {
+        switch (currentType) {
             case BASIC:
                 return SubscriptionType.PRO;
             case PRO:
                 return SubscriptionType.ELITE;
             default:
-                return currentSubscriptionType;
+                return null;
         }
     }
 }
