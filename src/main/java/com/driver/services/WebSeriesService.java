@@ -29,7 +29,6 @@ public class WebSeriesService {
             throw new Exception("Series is already present");
         }
 
-        // Retrieve the production house based on the provided production house ID
         Integer productionHouseId = webSeriesEntryDto.getProductionHouseId();
         ProductionHouse productionHouse = productionHouseRepository.findById(productionHouseId)
                 .orElseThrow(() -> new Exception("Production house not found"));
@@ -42,16 +41,12 @@ public class WebSeriesService {
                 webSeriesEntryDto.getSubscriptionType()
         );
 
-        // Set the production house for the web series
         webSeries.setProductionHouse(productionHouse);
 
-        // Save the web series and update the ratings of the production house
         WebSeries savedWebSeries = webSeriesRepository.save(webSeries);
 
-        // Calculate the new ratings for the production house
         double productionHouseRatings = calculateProductionHouseRatings(productionHouse);
 
-        // Update the production house ratings
         productionHouse.setRatings(productionHouseRatings);
         productionHouseRepository.save(productionHouse);
 

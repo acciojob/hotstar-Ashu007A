@@ -55,43 +55,6 @@ public class SubscriptionService {
         //In all other cases just try to upgrade the subscription and tell the difference of price that user has to pay
         //update the subscription in the repository
 
-//        try {
-//            User user = userRepository.findById(userId).orElse(null);
-//
-//            if (user == null) {
-//                throw new IllegalArgumentException("User not found");
-//            }
-//
-//            Subscription currentSubscription = user.getSubscription();
-//            if (currentSubscription == null) {
-//                throw new IllegalStateException("User does not have an existing subscription");
-//            }
-//
-//            SubscriptionType currentSubscriptionType = currentSubscription.getSubscriptionType();
-//
-//            if (currentSubscriptionType == SubscriptionType.ELITE) {
-//                throw new IllegalStateException("Already the best subscription");
-//            }
-//
-//            SubscriptionType nextSubscriptionType = getNextSubscriptionType(currentSubscriptionType);
-//
-//            int differenceInFare = calculateSubscriptionAmount(nextSubscriptionType, currentSubscription.getNoOfScreensSubscribed())
-//                    - currentSubscription.getTotalAmountPaid();
-//
-//            if (differenceInFare <= 0) {
-//                throw new IllegalStateException("Invalid subscription upgrade");
-//            }
-//
-//            Subscription newSubscription = new Subscription(nextSubscriptionType, currentSubscription.getNoOfScreensSubscribed(), new Date(), differenceInFare);
-//            newSubscription.setUser(user);
-//            subscriptionRepository.save(newSubscription);
-//
-//            return differenceInFare;
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return -1; // Handle the exception appropriately
-//        }
-
         try {
             User user = userRepository.findById(userId).orElse(null);
 
@@ -107,20 +70,16 @@ public class SubscriptionService {
             SubscriptionType currentSubscriptionType = currentSubscription.getSubscriptionType();
 
             if (currentSubscriptionType == SubscriptionType.ELITE) {
-                throw new IllegalStateException("Already the best Subscription");
+                throw new IllegalStateException("Already the best subscription");
             }
 
             SubscriptionType nextSubscriptionType = getNextSubscriptionType(currentSubscriptionType);
-
-            if (nextSubscriptionType == null) {
-                throw new IllegalArgumentException("Invalid subscription upgrade");
-            }
 
             int differenceInFare = calculateSubscriptionAmount(nextSubscriptionType, currentSubscription.getNoOfScreensSubscribed())
                     - currentSubscription.getTotalAmountPaid();
 
             if (differenceInFare <= 0) {
-                throw new IllegalArgumentException("Invalid subscription upgrade");
+                throw new IllegalStateException("Invalid subscription upgrade");
             }
 
             Subscription newSubscription = new Subscription(nextSubscriptionType, currentSubscription.getNoOfScreensSubscribed(), new Date(), differenceInFare);
@@ -130,7 +89,7 @@ public class SubscriptionService {
             return differenceInFare;
         } catch (Exception e) {
             e.printStackTrace();
-            throw e;
+            return -1;
         }
     }
 
@@ -150,11 +109,12 @@ public class SubscriptionService {
             return totalRevenue;
         } catch (Exception e) {
             e.printStackTrace();
-            return -1; // Handle the exception appropriately
+            return -1;
         }
     }
 
     private int calculateSubscriptionAmount(SubscriptionType subscriptionType, int noOfScreensRequired) {
+
         int baseAmount = 0;
         int screenRate = 0;
 
@@ -177,6 +137,7 @@ public class SubscriptionService {
     }
 
     private int calculateFareDifference(SubscriptionType currentSubscriptionType) {
+
         int currentFare = 0;
         int nextFare = 0;
 
@@ -195,6 +156,7 @@ public class SubscriptionService {
     }
 
     private SubscriptionType getNextSubscriptionType(SubscriptionType currentType) {
+
         switch (currentType) {
             case BASIC:
                 return SubscriptionType.PRO;

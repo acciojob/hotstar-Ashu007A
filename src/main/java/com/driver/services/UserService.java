@@ -54,6 +54,7 @@ public class UserService {
     }
 
     private boolean isWebSeriesViewable(WebSeries webSeries, SubscriptionType userSubscriptionType, int userAge) {
+
         SubscriptionType webSeriesSubscriptionType = webSeries.getSubscriptionType();
         int webSeriesAgeLimit = webSeries.getAgeLimit();
 
