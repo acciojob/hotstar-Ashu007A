@@ -10,6 +10,7 @@ import com.driver.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.Date;
 import java.util.List;
 
@@ -47,6 +48,7 @@ public class SubscriptionService {
         }
     }
 
+    @Transactional
     public Integer upgradeSubscription(Integer userId)throws Exception{
 
         //If you are already at an ElITE subscription : then throw Exception ("Already the best Subscription")
@@ -98,9 +100,9 @@ public class SubscriptionService {
             }
 
             Subscription currentSubscription = user.getSubscription();
-//            if (currentSubscription == null) {
-//                throw new IllegalStateException("User does not have an existing subscription");
-//            }
+            if (currentSubscription == null) {
+                throw new IllegalStateException("User does not have an existing subscription");
+            }
 
             SubscriptionType currentSubscriptionType = currentSubscription.getSubscriptionType();
 
