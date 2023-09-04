@@ -98,9 +98,9 @@ public class SubscriptionService {
             }
 
             Subscription currentSubscription = user.getSubscription();
-            if (currentSubscription == null) {
-                throw new IllegalStateException("User does not have an existing subscription");
-            }
+//            if (currentSubscription == null) {
+//                throw new IllegalStateException("User does not have an existing subscription");
+//            }
 
             SubscriptionType currentSubscriptionType = currentSubscription.getSubscriptionType();
 
